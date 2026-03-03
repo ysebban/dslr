@@ -1,20 +1,11 @@
+Clean histogram
 
-+ CREATE dslr PACKAGE
-    + math
-    + shared / utils
-    + ...
+Add ReadMe.md
 
-+ VISUALISATION 
+Plot and Pair
 
-    + Histogram
+Models
 
-    + Plot
+Add Describe fields ?
 
-    + Pair
-
-
-+ MODEL 
-
-    + Trainer 
-
-    + Predict
+Look up BatchGD

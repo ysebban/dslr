@@ -1,28 +1,64 @@
+"""
+describe.py
+
+Compute and print summary statistics for numeric features in a CSV dataset.
+
+The output is similar to `pandas.DataFrame.describe()` and includes:
+Count, Mean, Std, Min, 25%, 50%, 75%, Max.
+
+A column is considered a numeric feature if:
+- Missing values are ignored (None, NaN, empty/whitespace strings).
+- Every non-missing value can be converted to float.
+
+Usage:
+  python describe.py <csv_path>
+"""
+
+from __future__ import annotations
+
+import argparse
 import math
-import pandas
 import shutil
-import sys
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
+from typing import Iterable
 
-from maths import our_mean, our_std, our_quartile, our_min_max
-from shared import load, is_missing
+from CsvManip import CsvManip
+from maths import Maths
 
-LABELS = {
+
+LABELS: dict[str, str] = {
     "count": "Count",
-    "mean":  "Mean",
-    "std":   "Std",
-    "min":   "Min",
-    "q1":   "25%",
-    "q2":   "50%",
-    "q3":   "75%",
-    "max":   "Max",
+    "mean": "Mean",
+    "std": "Std",
+    "min": "Min",
+    "q1": "25%",
+    "q2": "50%",
+    "q3": "75%",
+    "max": "Max",
 }
-PRECISION = 6        # rounded float
-MAX_HEADER_W = 18    # truncate long feature names in header
+
+PRECISION = 6          # numeric formatting precision
+MAX_HEADER_W = 18      # maximum visible characters for feature headers
+MIN_COLUMN_W = 12      # minimum width of a feature column in characters
 
 
-@dataclass(slots=True)
+# ---------- Metrics ----------
+@dataclass(frozen=True, slots=True)
 class FeatureMetrics:
+    """
+    Summary statistics for a single numeric feature.
+
+    Attributes:
+        count: Number of numeric values (as float for printing consistency).
+        mean: Arithmetic mean.
+        std: Sample standard deviation (n-1).
+        min: Minimum value.
+        q1:  25th percentile.
+        q2:  50th percentile (median).
+        q3:  75th percentile.
+        max: Maximum value.
+    """
+
     count: float
     mean: float
     std: float
@@ -33,122 +69,242 @@ class FeatureMetrics:
     max: float
 
     @classmethod
-    def from_values(cls, xs: list[float]) -> "FeatureMetrics":
-        n = len(xs)
-        if n == 0:
+    def from_values(cls, values: list[float]) -> "FeatureMetrics":
+        """
+        Compute metrics from a list of floats.
+
+        Args:
+            values: List of numeric values (already converted to float).
+
+        Returns:
+            FeatureMetrics instance. If `values` is empty, all metrics are NaN.
+        """
+        if not values:
             nan = math.nan
             return cls(nan, nan, nan, nan, nan, nan, nan, nan)
 
-        mn, mx = our_min_max(xs)
+        minimum, maximum = Maths.min_max(values)
         return cls(
-            count=float(n),
-            mean=our_mean(xs),
-            std=our_std(xs),
-            min=mn,
-            q1=our_quartile(xs, 0.25),
-            q2=our_quartile(xs, 0.50),
-            q3=our_quartile(xs, 0.75),
-            max=mx,
+            count=float(len(values)),
+            mean=Maths.mean(values),
+            std=Maths.std(values),
+            min=minimum,
+            q1=Maths.quartile(values, 0.25),
+            q2=Maths.quartile(values, 0.50),
+            q3=Maths.quartile(values, 0.75),
+            max=maximum,
         )
+
+
+# ---------- Report rendering ----------
+@dataclass(frozen=True, slots=True)
+class FeatureColumn:
+    """Rendering metadata for one feature column."""
+
+    feature_name: str
+    header: str
+    width: int
 
 
 @dataclass(slots=True)
 class DescribeReport:
+    """
+    Terminal-friendly table of FeatureMetrics for multiple features.
+
+    This class only formats computed metrics. Feature extraction is performed
+    elsewhere and passed in as a mapping {feature_name -> list[float]}.
+    """
+
     by_feature: dict[str, FeatureMetrics]
 
+    # ---------- Construction ----------
     @classmethod
-    def from_dataframe(cls, df) -> "DescribeReport":
-        by: dict[str, FeatureMetrics] = {}
-        for col in df.columns:
-            if col.strip().lower() == "index":
-                continue
-            vals: list[float] = []
-            numeric = True
-            for raw in df[col].tolist():
-                if is_missing(raw):
-                    continue
-                try:
-                    vals.append(float(raw))
-                except Exception:
-                    numeric = False
-                    break
-            if numeric and vals:
-                by[col] = FeatureMetrics.from_values(vals)
-        return cls(by)
+    def from_features(cls,
+                      features: dict[str, list[float]]
+                      ) -> "DescribeReport":
+        """
+        Build a report from pre-extracted numeric features.
 
-    def _short(name: str) -> str:
-        if len(name) <= MAX_HEADER_W:
-            return name
-        return name[:MAX_HEADER_W - 3] + "..."
+        Args:
+            features: Mapping {feature_name -> list of float values}.
 
-    def _metric_field_names(self) -> list[str]:
-        return [f.name for f in fields(FeatureMetrics)]
+        Returns:
+            DescribeReport containing metrics for every feature.
+        """
+        metrics_by_feature: dict[str, FeatureMetrics] = {}
+        for feature_name, values in features.items():
+            metrics_by_feature[feature_name] = \
+                FeatureMetrics.from_values(values)
+        return cls(metrics_by_feature)
 
-    def __str__(self) -> str:
-        cols = list(self.by_feature.keys())
-        if not cols:
-            return "No numeric features found."
-        metric_names = self._metric_field_names()
-        term_w = shutil.get_terminal_size((120, 20)).columns
-        # label width
-        label_w = max(len(LABELS.get(m, m)) for m in metric_names)
-        # display header + column width
-        disp = [DescribeReport._short(c) for c in cols]
-        col_ws = [max(12, len(d)) for d in disp]
-        # chunk columns to fit terminal width
-        chunks = []
-        cur = []
-        used = label_w + 1
-        for c, d, w in zip(cols, disp, col_ws):
-            need = w + 1
-            if cur and used + need > term_w:
-                chunks.append(cur)
-                cur = []
-                used = label_w + 1
-            cur.append((c, d, w))
-            used += need
-        if cur:
-            chunks.append(cur)
+    # ---------- Layout / formatting helpers ----------
+    @staticmethod
+    def _terminal_width(default: int = 120) -> int:
+        """Return terminal width with a safe fallback."""
+        return shutil.get_terminal_size((default, 20)).columns
+
+    @staticmethod
+    def _metric_label_width(metric_names: Iterable[str]) -> int:
+        """Width of the left label column."""
+        return max(
+            len(
+                LABELS.get(metric_name, metric_name)
+                ) for metric_name in metric_names
+            )
+
+    @staticmethod
+    def _truncate_feature_name(feature_name: str) -> str:
+        """Truncate long feature names to keep headers readable."""
+        if len(feature_name) <= MAX_HEADER_W:
+            return feature_name
+        return feature_name[: MAX_HEADER_W - 3] + "..."
+
+    def _build_feature_columns(self) -> list[FeatureColumn]:
+        """Build per-feature rendering metadata."""
+        columns: list[FeatureColumn] = []
+        for feature_name in self.by_feature.keys():
+            header = self._truncate_feature_name(feature_name)
+            width = max(MIN_COLUMN_W, len(header))
+            columns.append(FeatureColumn(feature_name=feature_name,
+                                         header=header,
+                                         width=width
+                                         ))
+        return columns
+
+    @staticmethod
+    def _split_columns_to_fit_terminal(
+        columns: list[FeatureColumn],
+        *,
+        terminal_width: int,
+        metric_label_width: int,
+    ) -> list[list[FeatureColumn]]:
+        """Group columns into blocks that fit within the terminal width."""
+        blocks: list[list[FeatureColumn]] = []
+
+        current_block: list[FeatureColumn] = []
+        used_width = metric_label_width + 1
+
+        for column in columns:
+            needed = column.width + 1
+            if current_block and (used_width + needed > terminal_width):
+                blocks.append(current_block)
+                current_block = []
+                used_width = metric_label_width + 1
+
+            current_block.append(column)
+            used_width += needed
+
+        if current_block:
+            blocks.append(current_block)
+
+        return blocks
+
+    @staticmethod
+    def _format_number(value: float, width: int) -> str:
+        """Format a float into a fixed-width cell."""
+        if isinstance(value, float) and math.isnan(value):
+            return f"{'nan':>{width}}"
+        return f"{value:>{width}.{PRECISION}f}"
+
+    @staticmethod
+    def _render_header_row(
+        block: list[FeatureColumn],
+        metric_label_width: int
+         ) -> str:
+        """Render the header row for a column block."""
+        left_padding = " " * (metric_label_width + 1)
+        headers = " ".join(
+            f"{column.header:>{column.width}}" for column in block
+            )
+        return left_padding + headers
+
+    def _render_metric_row(
+        self,
+        metric_name: str,
+        *,
+        block: list[FeatureColumn],
+        metric_label_width: int,
+    ) -> str:
+        """Render one metric row for a column block."""
+        label = LABELS.get(metric_name, metric_name)
+        parts = [f"{label:<{metric_label_width}}"]
+
+        for column in block:
+            metrics = self.by_feature[column.feature_name]
+            value = getattr(metrics, metric_name)
+            parts.append(self._format_number(value, column.width))
+
+        return " ".join(parts)
+
+    def _render_blocks(
+        self,
+        blocks: list[list[FeatureColumn]],
+        *,
+        metric_names: list[str],
+        metric_label_width: int,
+    ) -> str:
+        """Render all blocks into the final report string."""
         lines: list[str] = []
-        for block_i, block in enumerate(chunks):
-            if block_i > 0:
-                lines.append("")  # blank line between blocks
-            # header/Features Names
-            header = " " * (label_w + 1) +\
-                " ".join(f"{d:>{w}}" for _, d, w in block)
-            lines.append(header)
-            # rows
-            for m in metric_names:
-                label = LABELS.get(m, m)
-                line = f"{label:<{label_w}} "
-                for feat, _, w in block:
-                    v = getattr(self.by_feature[feat], m)
-                    if isinstance(v, float) and math.isnan(v):
-                        cell = f"{'nan':>{w}}"
-                    else:
-                        cell = f"{v:>{w}.{PRECISION}f}"
-                    line += cell + " "
-                lines.append(line.rstrip())
+
+        for block_index, block in enumerate(blocks):
+            if block_index > 0:
+                lines.append("")
+
+            lines.append(self._render_header_row(block, metric_label_width))
+            for metric_name in metric_names:
+                lines.append(
+                    self._render_metric_row(
+                        metric_name,
+                        block=block,
+                        metric_label_width=metric_label_width,
+                    )
+                )
+
         return "\n".join(lines)
 
+    # ---------- Public rendering ----------
+    def __str__(self) -> str:
+        """Return the report as a formatted string."""
+        if not self.by_feature:
+            return "No numeric features found."
 
-def main(ac: int, av: list[str]) -> int:
+        metric_names = LABELS.keys()
+        metric_label_width = self._metric_label_width(metric_names)
 
-    if ac != 2:
-        print("Error: Wrong numbers of argument")
+        terminal_width = self._terminal_width()
+        columns = self._build_feature_columns()
+        blocks = self._split_columns_to_fit_terminal(
+            columns,
+            terminal_width=terminal_width,
+            metric_label_width=metric_label_width,
+        )
+
+        return self._render_blocks(
+            blocks,
+            metric_names=metric_names,
+            metric_label_width=metric_label_width,
+        )
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="describe.py",
+        description="Summary statistics for numeric features in a CSV.",
+    )
+    parser.add_argument("csv_path", help="Path to the CSV dataset.")
+    args = parser.parse_args(argv)
+
+    try:
+        dataframe = CsvManip.loadCsv(args.csv_path)
+    except Exception as exc:
+        parser.error(f"Cannot load CSV: {exc!s}")
         return 1
 
-    df = load(av[1])
-    if not isinstance(df, pandas.DataFrame):
-        print("Error: Cannot load CSV file")
-        return 1
-
-    report = DescribeReport.from_dataframe(df)
+    features = CsvManip.loadFeatures(dataframe)
+    report = DescribeReport.from_features(features)
     print(report)
-#   JUST HERE TO SEE THE DIFF
-#   print(df.describe())
     return 0
 
 
 if __name__ == "__main__":
-    main(len(sys.argv), sys.argv)
+    raise SystemExit(main())
