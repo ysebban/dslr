@@ -1,6 +1,6 @@
 import pandas
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass(slots=True)
@@ -35,26 +35,35 @@ class CsvManip:
     def loadFeatures(
         dataframe: pandas.DataFrame,
         *,
+        house: str | None = None,
         ignore_cols: set[str] | None = None,
     ) -> dict[str, list[float]]:
         """
-        Call:obj.extract_numeric_features(data,ignore_cols={'index','stuf'...})
-        Reusable logic:
-        - skip ignored columns (case-insensitive + strip)
-        - ignore missing values
-        - keep column only if *all* non-missing values are float-convertible
+        Extract numeric features from a DataFrame, optionally filtered by Hogwarts house.
+        
+        Args:
+        
+        Returns:
+            Dict mapping feature names to lists of float values
         """
+        # Filter by house if specified
+        df = dataframe
+        if house is not None:
+            house_col = "Hogwarts House"
+            if house_col in df.columns:
+                df = df[df[house_col] == house]
+        
         ignore = {c.strip().lower() for c in (ignore_cols or {"index"})}
 
         out: dict[str, list[float]] = {}
-        for feature in dataframe.columns:
+        for feature in df.columns:
             if feature.strip().lower() in ignore:
                 continue
 
             values: list[float] = []
             numeric = True
 
-            for raw in dataframe[feature].tolist():
+            for raw in df[feature].tolist():
                 if CsvManip.is_missing(raw):
                     continue
                 try:
