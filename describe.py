@@ -57,6 +57,7 @@ class DescribeReport:
     by_feature: dict[str, FeatureMetrics]
 
     @classmethod
+    # TO DO Extract vals.append() logic in shared->keepNumeric(vals, col, df)?
     def from_dataframe(cls, df) -> "DescribeReport":
         by: dict[str, FeatureMetrics] = {}
         for col in df.columns:
@@ -146,7 +147,7 @@ def main(ac: int, av: list[str]) -> int:
     report = DescribeReport.from_dataframe(df)
     print(report)
 #   JUST HERE TO SEE THE DIFF
-#   print(df.describe())
+    print(df.describe())
     return 0
 
 
