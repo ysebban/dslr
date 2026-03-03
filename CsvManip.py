@@ -3,7 +3,6 @@ import math
 from dataclasses import dataclass, field
 
 
-
 @dataclass(slots=True)
 class CsvManip:
     """
@@ -13,23 +12,17 @@ class CsvManip:
     obj.features -> dict [course_name to course_score]
     """
     csv_path: str
-    dataframe: pandas.DataFrame = field(init=False)
-    features: dict[str, list[float]] = field(init=False)
 
-    def __post_init__(self) -> None:
-        df = self.load_csv(self.csv_path)
-        if not isinstance(df, pandas.DataFrame):
-            raise ValueError(f"Cannot load CSV file: {self.csv_path!r}")
-        self.dataframe = df
-        self.features = self.extract_numeric_features(df)
+    @staticmethod
+    def loadCsv(path: str) -> pandas.DataFrame:
 
-    @classmethod
-    def load_csv(path: str) -> pandas.DataFrame:
         if not isinstance(path, str):
             return None
+
         out = pandas.read_csv(path)
         return out
 
+    @staticmethod
     def is_missing(x) -> bool:
         if x is None:
             return True
@@ -39,7 +32,7 @@ class CsvManip:
         return s == ""
 
     @staticmethod
-    def extract_numeric_features(
+    def loadFeatures(
         dataframe: pandas.DataFrame,
         *,
         ignore_cols: set[str] | None = None,

@@ -113,7 +113,8 @@ class DescribeReport:
             if block_i > 0:
                 lines.append("")
 
-            header = " " * (label_w + 1) + " ".join(f"{d:>{w}}" for _, d, w in block)
+            header = " " * (label_w + 1) +\
+                " ".join(f"{d:>{w}}" for _, d, w in block)
             lines.append(header)
 
             for m in metric_names:
@@ -135,17 +136,14 @@ def main(ac: int, av: list[str]) -> int:
     if ac != 2:
         print("Error: Wrong numbers of argument")
         return 1
-
-    try:
-        csv = CsvManip(av[1])
-    except Exception:
-        print("Error: Cannot load CSV file")
-        return 1
-
-    report = DescribeReport.from_features(csv.features)
+    dataframe = CsvManip.loadCsv(av[1])
+    features = CsvManip.loadFeatures(
+        dataframe,
+        ignore_cols={'index'}
+    )
+    report = DescribeReport.from_features(features)
     print(report)
-
-    # optional debug comparison (keep/remove as you want)
+    # debug comparison
     # print(csv.dataframe.describe())
     return 0
 
