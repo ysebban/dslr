@@ -107,7 +107,7 @@ def main(ac: int, av: list[str]) -> int:
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
     
     # Connect keyboard events
-    fig.canvas.mpl_connect('key_press_event', on_key)
+    fig.canvas.mpl_connect('key_release_event', on_key)
     
     # Show first feature
     update_plot(0)

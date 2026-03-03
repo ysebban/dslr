@@ -52,7 +52,7 @@ class Maths:
         Returns:
             Sample standard deviation, or math.nan if there are fewer than 2 values.
         """
-        mean_value = Maths.our_mean(values)
+        mean_value = Maths.mean(values)
         if math.isnan(mean_value):
             return math.nan
 
