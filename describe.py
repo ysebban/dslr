@@ -1,24 +1,24 @@
 import math
-import pandas
 import shutil
 import sys
 from dataclasses import dataclass, fields
 
 from maths import our_mean, our_std, our_quartile, our_min_max
-from shared import load, is_missing
+from CsvManip import CsvManip
+
 
 LABELS = {
     "count": "Count",
     "mean":  "Mean",
     "std":   "Std",
     "min":   "Min",
-    "q1":   "25%",
-    "q2":   "50%",
-    "q3":   "75%",
+    "q1":    "25%",
+    "q2":    "50%",
+    "q3":    "75%",
     "max":   "Max",
 }
-PRECISION = 6        # rounded float
-MAX_HEADER_W = 18    # truncate long feature names in header
+PRECISION = 6
+MAX_HEADER_W = 18
 
 
 @dataclass(slots=True)
@@ -57,30 +57,24 @@ class DescribeReport:
     by_feature: dict[str, FeatureMetrics]
 
     @classmethod
-    # TO DO Extract vals.append() logic in shared->keepNumeric(vals, col, df)?
-    def from_dataframe(cls, df) -> "DescribeReport":
+    def from_features(cls,
+                      features: dict[str, list[float]]) -> "DescribeReport":
         by: dict[str, FeatureMetrics] = {}
-        for col in df.columns:
-            if col.strip().lower() == "index":
-                continue
-            vals: list[float] = []
-            numeric = True
-            for raw in df[col].tolist():
-                if is_missing(raw):
-                    continue
-                try:
-                    vals.append(float(raw))
-                except Exception:
-                    numeric = False
-                    break
-            if numeric and vals:
-                by[col] = FeatureMetrics.from_values(vals)
+        for name, values in features.items():
+            if values:
+                by[name] = FeatureMetrics.from_values(values)
         return cls(by)
 
+    @classmethod
+    def from_csv(cls, path: str) -> "DescribeReport":
+        csv = CsvManip(path)
+        return cls.from_features(csv.features)
+
+    @staticmethod
     def _short(name: str) -> str:
         if len(name) <= MAX_HEADER_W:
             return name
-        return name[:MAX_HEADER_W - 3] + "..."
+        return name[: MAX_HEADER_W - 3] + "..."
 
     def _metric_field_names(self) -> list[str]:
         return [f.name for f in fields(FeatureMetrics)]
@@ -89,17 +83,19 @@ class DescribeReport:
         cols = list(self.by_feature.keys())
         if not cols:
             return "No numeric features found."
+
         metric_names = self._metric_field_names()
         term_w = shutil.get_terminal_size((120, 20)).columns
-        # label width
+
         label_w = max(len(LABELS.get(m, m)) for m in metric_names)
-        # display header + column width
+
         disp = [DescribeReport._short(c) for c in cols]
         col_ws = [max(12, len(d)) for d in disp]
-        # chunk columns to fit terminal width
+
         chunks = []
         cur = []
         used = label_w + 1
+
         for c, d, w in zip(cols, disp, col_ws):
             need = w + 1
             if cur and used + need > term_w:
@@ -108,17 +104,18 @@ class DescribeReport:
                 used = label_w + 1
             cur.append((c, d, w))
             used += need
+
         if cur:
             chunks.append(cur)
+
         lines: list[str] = []
         for block_i, block in enumerate(chunks):
             if block_i > 0:
-                lines.append("")  # blank line between blocks
-            # header/Features Names
-            header = " " * (label_w + 1) +\
-                " ".join(f"{d:>{w}}" for _, d, w in block)
+                lines.append("")
+
+            header = " " * (label_w + 1) + " ".join(f"{d:>{w}}" for _, d, w in block)
             lines.append(header)
-            # rows
+
             for m in metric_names:
                 label = LABELS.get(m, m)
                 line = f"{label:<{label_w}} "
@@ -130,24 +127,26 @@ class DescribeReport:
                         cell = f"{v:>{w}.{PRECISION}f}"
                     line += cell + " "
                 lines.append(line.rstrip())
+
         return "\n".join(lines)
 
 
 def main(ac: int, av: list[str]) -> int:
-
     if ac != 2:
         print("Error: Wrong numbers of argument")
         return 1
 
-    df = load(av[1])
-    if not isinstance(df, pandas.DataFrame):
+    try:
+        csv = CsvManip(av[1])
+    except Exception:
         print("Error: Cannot load CSV file")
         return 1
 
-    report = DescribeReport.from_dataframe(df)
+    report = DescribeReport.from_features(csv.features)
     print(report)
-#   JUST HERE TO SEE THE DIFF
-    print(df.describe())
+
+    # optional debug comparison (keep/remove as you want)
+    # print(csv.dataframe.describe())
     return 0
 
 
