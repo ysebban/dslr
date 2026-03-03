@@ -1,35 +1,62 @@
-import pandas
+"""
+CsvManip.py
+
+CSV loading and numeric feature extraction utilities.
+
+The main abstraction of the project is a "feature":
+- A feature corresponds to a dataset column that contains numeric values.
+- Missing values are ignored.
+- A column is numeric if all non-missing values can be converted to float.
+"""
+
 import math
-from dataclasses import dataclass
+import pandas
 
 
-@dataclass(slots=True)
 class CsvManip:
     """
-    To be used with obj = new CsvManip(csv_path)
-    Or CsvManip.function(arg)
-    obj.dataframe -> "raw" panda DataFrame Type
-    obj.features -> dict [course_name to course_score]
+    Csv utilities for this project.
+
+    This class is used as a namespace for static methods.
+    The recommended usage is:
+        dataframe = CsvManip.loadCsv(path)
+        features = CsvManip.loadFeatures(dataframe, ignore_cols={"index"})
     """
     csv_path: str
 
     @staticmethod
     def loadCsv(path: str) -> pandas.DataFrame:
+        """
+        Load a CSV file into a pandas DataFrame.
 
+        Args:
+            path: Path to a CSV file.
+
+        Returns:
+            pandas.DataFrame with the CSV contents.
+
+        Notes:
+            Returns None if `path` is not a string.
+        """
         if not isinstance(path, str):
             return None
-
-        out = pandas.read_csv(path)
-        return out
+        return pandas.read_csv(path)
 
     @staticmethod
-    def is_missing(x) -> bool:
-        if x is None:
+    def is_missing(value) -> bool:
+        """
+        Return True if `value` should be treated as missing.
+
+        Missing values:
+        - None
+        - NaN
+        - empty or whitespace-only strings
+        """
+        if value is None:
             return True
-        if isinstance(x, float) and math.isnan(x):
+        if isinstance(value, float) and math.isnan(value):
             return True
-        s = str(x).strip()
-        return s == ""
+        return str(value).strip() == ""
 
     @staticmethod
     def loadFeatures(
@@ -39,31 +66,39 @@ class CsvManip:
         ignore_cols: set[str] | None = None,
     ) -> dict[str, list[float]]:
         """
-        Extract numeric features from a DataFrame, optionally filtered by Hogwarts house.
-        
+        Extract numeric features from a DataFrame.
+
         Args:
-        
+            dataframe: Source pandas DataFrame.
+            house:Keeps only rows where column "Hogwarts House" equals `house`.
+            ignore_cols: Column names to ignore , default to {"index"}.
+
         Returns:
-            Dict mapping feature names to lists of float values
+            Dict mapping feature name -> list of float values.
+
+        Rules:
+            - Missing values are ignored.
+            - Included only if all non-missing values are float-convertible.
         """
-        # Filter by house if specified
-        df = dataframe
+        filtered = dataframe
+
         if house is not None:
             house_col = "Hogwarts House"
-            if house_col in df.columns:
-                df = df[df[house_col] == house]
-        
+            if house_col in filtered.columns:
+                filtered = filtered[filtered[house_col] == house]
+
         ignore = {c.strip().lower() for c in (ignore_cols or {"index"})}
 
-        out: dict[str, list[float]] = {}
-        for feature in df.columns:
-            if feature.strip().lower() in ignore:
+        features: dict[str, list[float]] = {}
+
+        for feature_name in filtered.columns:
+            if feature_name.strip().lower() in ignore:
                 continue
 
             values: list[float] = []
             numeric = True
 
-            for raw in df[feature].tolist():
+            for raw in filtered[feature_name].tolist():
                 if CsvManip.is_missing(raw):
                     continue
                 try:
@@ -73,6 +108,6 @@ class CsvManip:
                     break
 
             if numeric and values:
-                out[feature] = values
+                features[feature_name] = values
 
-        return out
+        return features
