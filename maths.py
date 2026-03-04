@@ -50,7 +50,7 @@ class Maths:
             values: Sequence of floats.
 
         Returns:
-            Sample standard deviation, or math.nan if there are fewer than 2 values.
+            Sample standard deviation, or math.nan if fewer than 2 values.
         """
         mean_value = Maths.mean(values)
         if math.isnan(mean_value):
@@ -74,7 +74,7 @@ class Maths:
             quartile: Quantile in [0.0, 1.0] (e.g. 0.25, 0.50, 0.75).
 
         Returns:
-            The requested quartile, or math.nan if there are fewer than 2 values.
+            The requested quartile, or math.nan if fewer than 2 values.
 
         Notes:
             Uses the common "position = (n - 1) * q" interpolation approach.
@@ -104,7 +104,7 @@ class Maths:
             values: Sequence of floats.
 
         Returns:
-            (min, max) as floats, or (math.nan, math.nan) if there are fewer than 2 values.
+            (min, max) as floats, or math.nan if fewer than 2 values.
         """
         if len(values) < 2:
             return (math.nan, math.nan)
