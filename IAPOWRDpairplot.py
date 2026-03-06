@@ -34,7 +34,6 @@ from PlotNavigator import PlotNavigator
 
 HOUSES = ("Ravenclaw", "Slytherin", "Gryffindor", "Hufflepuff")
 HOUSE_COL = "Hogwarts House"
-IGNORE_COLS = {"index", HOUSE_COL}
 
 
 class PairPlotByFeature:

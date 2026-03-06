@@ -1,16 +1,18 @@
 """
 histogram.py
 
-Interactive viewer for per-house distributions (Mean + Std per feature).
+Interactive histogram viewer for numeric features.
 
-Navigation:
-- Right arrow: next feature
-- Left arrow: previous feature
-- r: redraw
-- q / escape: quit
+The main abstraction of this file is a "histogram plot":
+- A histogram plot displays one feature at a time.
+- For each feature, values are grouped by house.
+- Two bar charts are shown:
+    - mean by house
+    - std by house
+- Navigation is handled by PlotNavigator.
 
 Usage:
-  python histogram.py <csv_path>
+    python histogram.py <csv_path>
 """
 
 from __future__ import annotations
@@ -29,26 +31,98 @@ HOUSES = ("Ravenclaw", "Slytherin", "Gryffindor", "Hufflepuff")
 
 class HistogramPlot:
     """
-    Histogram viewer: for each feature, display mean and std by house.
+    Histogram plot utilities for this project.
+
+    This class prepares per-house numeric features and renders one
+    feature at a time.
+
+    The recommended usage is:
+        histogram = HistogramPlot(dataframe)
+
+        navigator = PlotNavigator(
+            histogram.feature_names,
+            render=histogram.render,
+            make_figure=histogram.make_figure,
+            title="Histogram",
+        )
+
+        navigator.show()
     """
 
     def __init__(self, dataframe) -> None:
+        """
+        Initialize a histogram plot helper.
+
+        Args:
+            dataframe: Source pandas DataFrame.
+
+        Returns:
+            A HistogramPlot instance.
+
+        Notes:
+            Numeric features are extracted once for the full dataset.
+            Per-house features are also precomputed to make rendering simpler.
+        """
         self.dataframe = dataframe
 
         all_features = CsvManip.loadFeatures(self.dataframe)
         self.feature_names = list(all_features.keys())
 
-        self.by_house = {
-            house: CsvManip.loadFeatures(self.dataframe, house=house)
-            for house in HOUSES
-        }
+        self.by_house = {}
+        for house_name in HOUSES:
+            house_features = CsvManip.loadFeatures(
+                self.dataframe,
+                houses=[house_name]
+            )
+            self.by_house[house_name] = house_features
 
     def make_figure(self):
-        fig, (ax_mean, ax_std) = plt.subplots(1, 2, figsize=(12, 5))
-        return fig, (ax_mean, ax_std)
+        """
+        Create the matplotlib figure used for the histogram view.
+
+        Returns:
+            A matplotlib figure.
+
+        Notes:
+            Axes are created separately by make_axes().
+        """
+        return plt.figure(figsize=(12, 5))
+
+    def make_axes(self, figure):
+        """
+        Create the axes used for the histogram view.
+
+        Args:
+            figure: Matplotlib figure where axes must be created.
+
+        Returns:
+            A tuple of axes:
+                - mean_axis
+                - std_axis
+        """
+        mean_axis, std_axis = figure.subplots(1, 2)
+        return (mean_axis, std_axis)
 
     def render(self, feature_name: str, axes, index: int, total: int) -> str:
-        ax_mean, ax_std = axes
+        """
+        Render one feature for all houses.
+
+        Args:
+            feature_name: Name of the feature to display.
+            axes: Tuple containing the matplotlib axes.
+            index: Current feature index.
+            total: Total number of features.
+
+        Returns:
+            The feature name, used by PlotNavigator in the figure title.
+
+        Behavior:
+            - Computes mean by house
+            - Computes std by house
+            - Draws one bar chart for means
+            - Draws one bar chart for stds
+        """
+        mean_axis, std_axis = axes
 
         means = []
         stds = []
@@ -65,22 +139,37 @@ class HistogramPlot:
 
         colors = ['#3498db', '#2ecc71', '#e74c3c', '#f1c40f']
 
-        ax_mean.bar(HOUSES, means, color=colors)
-        ax_mean.set_title("Mean by house")
-        ax_mean.set_xlabel("House")
-        ax_mean.set_ylabel("Mean")
-        ax_mean.tick_params(axis="x", rotation=45)
+        mean_axis.bar(HOUSES, means, color=colors)
+        mean_axis.set_title("Mean by house")
+        mean_axis.set_xlabel("House")
+        mean_axis.set_ylabel("Mean")
+        mean_axis.tick_params(axis="x", rotation=45)
 
-        ax_std.bar(HOUSES, stds, color=colors)
-        ax_std.set_title("Std by house")
-        ax_std.set_xlabel("House")
-        ax_std.set_ylabel("Std")
-        ax_std.tick_params(axis="x", rotation=45)
+        std_axis.bar(HOUSES, stds, color=colors)
+        std_axis.set_title("Std by house")
+        std_axis.set_xlabel("House")
+        std_axis.set_ylabel("Std")
+        std_axis.tick_params(axis="x", rotation=45)
 
         return feature_name
 
 
 def main(argv: list[str] | None = None) -> int:
+    """
+    Run the histogram viewer from command line arguments.
+
+    Args:
+        argv: Optional argument list. If None, uses command line arguments.
+
+    Returns:
+        Exit status code.
+
+    Behavior:
+        - Parses the CSV path
+        - Loads the dataset
+        - Builds the histogram helper
+        - Starts the interactive navigator
+    """
     parser = argparse.ArgumentParser(
         prog="histogram.py",
         description="Interactive per-house mean/std view for numeric features."
@@ -101,8 +190,9 @@ def main(argv: list[str] | None = None) -> int:
 
     navigator = PlotNavigator(
         histogram.feature_names,
-        render=histogram.render,            # bound method
-        make_figure=histogram.make_figure,  # bound method
+        render=histogram.render,
+        make_figure=histogram.make_figure,
+        make_axes=histogram.make_axes,
         title="Histogram",
     )
     navigator.show()

@@ -62,7 +62,7 @@ class CsvManip:
     def loadFeatures(
         dataframe: pandas.DataFrame,
         *,
-        house: str | None = None,
+        houses: set[str] | None = None,
         ignore_cols: set[str] | None = None,
     ) -> dict[str, list[float]]:
         """
@@ -70,7 +70,7 @@ class CsvManip:
 
         Args:
             dataframe: Source pandas DataFrame.
-            house:Keeps only rows where column "Hogwarts House" equals `house`.
+            houses:Keeps only rows where column "Hogwarts House" equals houses.
             ignore_cols: Column names to ignore , default to {"index"}.
 
         Returns:
@@ -82,10 +82,10 @@ class CsvManip:
         """
         filtered = dataframe
 
-        if house is not None:
+        if houses is not None:
             house_col = "Hogwarts House"
             if house_col in filtered.columns:
-                filtered = filtered[filtered[house_col] == house]
+                filtered = filtered[filtered[house_col].isin(houses)]
 
         ignore = {c.strip().lower() for c in (ignore_cols or {"index"})}
 
@@ -111,3 +111,123 @@ class CsvManip:
                 features[feature_name] = values
 
         return features
+
+    # @staticmethod
+    # def loadFeaturesMatrix(
+    #     dataframe: pandas.DataFrame,
+    #     feature_names: list[str],
+    #     *,
+    #     houses: set[str] | None = None,
+    #     labels: bool = False,
+    # ) -> tuple[list[str], list[list[float]], list[str] | None]:
+    #     """
+    #     Extract a row-aligned numeric feature matrix from a DataFrame.
+
+    #     Args:
+    #         dataframe: Source pandas DataFrame.
+    #         feature_names: Selected feature names to keep.
+    #         houses: Keeps only rows where column "Hogwarts House" is in houses.
+    #         labels: If True, also returns aligned house labels.
+
+    #     Returns:
+    #         A tuple containing:
+    #             - ordered feature names
+    #             - matrix of numeric rows
+    #             - list of labels, or None
+
+    #     Rules:
+    #         - Selected features must stay aligned by row.
+    #         - If one selected value is invalid, the whole row is ignored.
+    #         - Feature order is preserved from the DataFrame columns.
+    #     """
+    #     filtered = dataframe
+
+    #     house_col = "Hogwarts House"
+    #     if houses is not None and house_col in filtered.columns:
+    #         filtered = filtered[filtered[house_col].isin(houses)]
+
+    #     names = [col for col in filtered.columns if col in feature_names]
+
+    #     matrix: list[list[float]] = []
+    #     output_labels: list[str] | None = [] if labels else None
+
+    #     for _, row in filtered.iterrows():
+    #         row_values: list[float] = []
+    #         valid_row = True
+
+    #         for name in names:
+    #             raw_value = row[name]
+
+    #             if CsvManip.is_missing(raw_value):
+    #                 valid_row = False
+    #                 break
+
+    #             try:
+    #                 row_values.append(float(raw_value))
+    #             except Exception:
+    #                 valid_row = False
+    #                 break
+
+    #         if not valid_row:
+    #             continue
+
+    #         matrix.append(row_values)
+
+    #         if labels and output_labels is not None:
+    #             if house_col in filtered.columns:
+    #                 output_labels.append(row[house_col])
+    #             else:
+    #                 output_labels.append("")
+
+    #     return (names, matrix, output_labels)
+    @staticmethod
+    def loadFeaturesMatrix(
+        dataframe: pandas.DataFrame,
+        feature_names: list[str],
+        *,
+        houses: set[str] | None = None,
+        labels: bool = False,
+    ) -> tuple[list[str], list[list[float]], list[str] | None]:
+        filtered = dataframe
+
+        house_col = "Hogwarts House"
+        if houses is not None and house_col in filtered.columns:
+            filtered = filtered[filtered[house_col].isin(houses)]
+
+        names = [name for name in feature_names if name in filtered.columns]
+
+        matrix: list[list[float]] = []
+        output_labels: list[str] | None = [] if labels else None
+
+        selected = filtered[names]
+
+        label_values = None
+        if labels and house_col in filtered.columns:
+            label_values = filtered[house_col].tolist()
+
+        for row_index, row_tuple in enumerate(selected.itertuples(index=False, name=None)):
+            row_out: list[float] = []
+            valid_row = True
+
+            for raw_value in row_tuple:
+                if CsvManip.is_missing(raw_value):
+                    valid_row = False
+                    break
+                try:
+                    row_out.append(float(raw_value))
+                except Exception:
+                    valid_row = False
+                    break
+
+            if not valid_row:
+                continue
+
+            matrix.append(row_out)
+
+            if output_labels is not None:
+                if label_values is not None:
+                    output_labels.append(label_values[row_index])
+                else:
+                    output_labels.append("")
+
+        return (names, matrix, output_labels)
