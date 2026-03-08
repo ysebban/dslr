@@ -112,74 +112,6 @@ class CsvManip:
 
         return features
 
-    # @staticmethod
-    # def loadFeaturesMatrix(
-    #     dataframe: pandas.DataFrame,
-    #     feature_names: list[str],
-    #     *,
-    #     houses: set[str] | None = None,
-    #     labels: bool = False,
-    # ) -> tuple[list[str], list[list[float]], list[str] | None]:
-    #     """
-    #     Extract a row-aligned numeric feature matrix from a DataFrame.
-
-    #     Args:
-    #         dataframe: Source pandas DataFrame.
-    #         feature_names: Selected feature names to keep.
-    #         houses: Keeps only rows where column "Hogwarts House" is in houses.
-    #         labels: If True, also returns aligned house labels.
-
-    #     Returns:
-    #         A tuple containing:
-    #             - ordered feature names
-    #             - matrix of numeric rows
-    #             - list of labels, or None
-
-    #     Rules:
-    #         - Selected features must stay aligned by row.
-    #         - If one selected value is invalid, the whole row is ignored.
-    #         - Feature order is preserved from the DataFrame columns.
-    #     """
-    #     filtered = dataframe
-
-    #     house_col = "Hogwarts House"
-    #     if houses is not None and house_col in filtered.columns:
-    #         filtered = filtered[filtered[house_col].isin(houses)]
-
-    #     names = [col for col in filtered.columns if col in feature_names]
-
-    #     matrix: list[list[float]] = []
-    #     output_labels: list[str] | None = [] if labels else None
-
-    #     for _, row in filtered.iterrows():
-    #         row_values: list[float] = []
-    #         valid_row = True
-
-    #         for name in names:
-    #             raw_value = row[name]
-
-    #             if CsvManip.is_missing(raw_value):
-    #                 valid_row = False
-    #                 break
-
-    #             try:
-    #                 row_values.append(float(raw_value))
-    #             except Exception:
-    #                 valid_row = False
-    #                 break
-
-    #         if not valid_row:
-    #             continue
-
-    #         matrix.append(row_values)
-
-    #         if labels and output_labels is not None:
-    #             if house_col in filtered.columns:
-    #                 output_labels.append(row[house_col])
-    #             else:
-    #                 output_labels.append("")
-
-    #     return (names, matrix, output_labels)
     @staticmethod
     def loadFeaturesMatrix(
         dataframe: pandas.DataFrame,
@@ -205,7 +137,9 @@ class CsvManip:
         if labels and house_col in filtered.columns:
             label_values = filtered[house_col].tolist()
 
-        for row_index, row_tuple in enumerate(selected.itertuples(index=False, name=None)):
+        for row_index, row_tuple in enumerate(
+                selected.itertuples(index=False, name=None)
+        ):
             row_out: list[float] = []
             valid_row = True
 

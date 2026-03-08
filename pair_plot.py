@@ -14,7 +14,7 @@ Usage:
   python pair_plot.py <csv_path>
 """
 
-from __future__ import annotations
+# from __future__ import annotations
 
 import argparse
 import math
@@ -54,7 +54,10 @@ class PairPlotByFeature:
         self.feature_names = list(features.keys())
 
         self.columns_count = 4
-        self.rows_count = max(1, math.ceil(len(self.feature_names) / self.columns_count))
+        self.rows_count = max(
+            1,
+            math.ceil(len(self.feature_names) / self.columns_count)
+            )
 
     def make_figure(self):
         """
@@ -63,7 +66,9 @@ class PairPlotByFeature:
         Returns:
             A matplotlib figure.
         """
-        return plt.figure(figsize=(3.5 * self.columns_count, 3 * self.rows_count))
+        return plt.figure(figsize=(
+            3.5 * self.columns_count, 3 * self.rows_count
+            ))
 
     def make_axes(self, figure):
         """
