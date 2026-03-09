@@ -21,9 +21,9 @@ import argparse
 import math
 import matplotlib.pyplot as plt
 
-from CsvManip import CsvManip
-from maths import Maths
-from PlotNavigator import PlotNavigator
+from utils.CsvManip import CsvManip
+from utils.maths import Maths
+from utils.PlotNavigator import PlotNavigator
 
 
 HOUSES = ("Ravenclaw", "Slytherin", "Gryffindor", "Hufflepuff")

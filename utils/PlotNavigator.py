@@ -24,8 +24,6 @@ Rendering model:
 - We clear only the existing axes content before rendering again.
 """
 
-from __future__ import annotations
-
 import matplotlib.pyplot as plt
 
 
@@ -48,8 +46,8 @@ class PlotNavigator:
 
     Expected collaborators:
     - `make_figure()` returns a matplotlib Figure
-    - `make_axes(figure)` creates and returns the axes container for that figure
-    - `render(item, axes, index, total)` draws the current item and may return a title
+    - `make_axes(figure)` creates and returns the axes for that figure
+    - `render(item, axes, index, total)` draws the current item
     """
 
     def __init__(self, items, *, render, make_figure, make_axes, title="Plot"):
@@ -132,7 +130,7 @@ class PlotNavigator:
             The Tk widget associated with the current figure canvas.
 
         Raises:
-            RuntimeError: If the figure is missing or the backend is not Tk-based.
+            RuntimeError: If the figure is missing.
         """
         if self.figure is None:
             raise RuntimeError("Figure is not initialized.")
@@ -307,7 +305,7 @@ class PlotNavigator:
             - q or escape: quit
 
         Notes:
-            The key callback only updates navigation state and schedules a draw.
+            The key callback only updates navigation state.
             It never redraws immediately inside the raw event callback.
         """
         key = event.key

@@ -269,53 +269,93 @@ class Maths:
         return between / within
 
     @staticmethod
-    def covariance(x: list[float], y: list[float]) -> float:
+    def mean_spread(group_means: dict[str, float]) -> float:
         """
-        Sample covariance of two aligned vectors.
-
-        Returns math.nan if invalid.
+        Tells how wide means are spread between houses for a given feature
         """
-        n = len(x)
+        if not group_means:
+            return 0.0
 
-        if n != len(y) or n < 2:
-            return math.nan
-
-        mean_x = Maths.mean(x)
-        mean_y = Maths.mean(y)
-
-        total = 0.0
-
-        for xi, yi in zip(x, y):
-            total += (xi - mean_x) * (yi - mean_y)
-
-        return total / (n - 1)
+        values = list(group_means.values())
+        minimum, maximum = Maths.min_max(values)
+        return maximum - minimum
 
     @staticmethod
-    def correlation(x: list[float], y: list[float]) -> float:
+    def avgr_std_group(group_stds: dict[str, float]) -> float:
         """
-        Pearson correlation coefficient in [-1, 1].
+        Compute average derivation of all houses for a feature
         """
-        cov = Maths.covariance(x, y)
-
-        std_x = Maths.std(x) if x else math.nan
-        std_y = Maths.std(y) if y else math.nan
-
-        if math.isnan(cov) or math.isnan(std_x) or math.isnan(std_y):
-            return math.nan
-
-        if std_x == 0.0 or std_y == 0.0:
-            return math.nan
-
-        return cov / (std_x * std_y)
+        if not group_stds:
+            return 0.0
+        values = list(group_stds.values())
+        return Maths.mean(values)
 
     @staticmethod
-    def absolute_correlation(x: list[float], y: list[float]) -> float:
+    def norm_spread(
+            group_means: dict[str, float],
+            group_stds: dict[str, float]
+                ) -> float:
         """
-        Absolute value of Pearson correlation.
+        Normalize mean spread so it's "unit free"
         """
-        corr = Maths.correlation(x, y)
+        if not group_means or not group_stds:
+            return 0.0
+        mean_spread = Maths.mean_spread(group_means)
+        avg_std = Maths.avgr_std_group(group_stds)
 
-        if math.isnan(corr):
-            return math.nan
+        if mean_spread == 0.0 or avg_std == 0.0:
+            return 0.0
+        return mean_spread / avg_std
 
-        return abs(corr)
+    # UNUSED FOR NOW COULD BE USE FOR MutualInfo extra overkilled bonus
+    # @staticmethod
+    # def covariance(x: list[float], y: list[float]) -> float:
+    #     """
+    #     Sample covariance of two aligned vectors.
+
+    #     Returns math.nan if invalid.
+    #     """
+    #     n = len(x)
+
+    #     if n != len(y) or n < 2:
+    #         return math.nan
+
+    #     mean_x = Maths.mean(x)
+    #     mean_y = Maths.mean(y)
+
+    #     total = 0.0
+
+    #     for xi, yi in zip(x, y):
+    #         total += (xi - mean_x) * (yi - mean_y)
+
+    #     return total / (n - 1)
+
+    # @staticmethod
+    # def correlation(x: list[float], y: list[float]) -> float:
+    #     """
+    #     Pearson correlation coefficient in [-1, 1].
+    #     """
+    #     cov = Maths.covariance(x, y)
+
+    #     std_x = Maths.std(x) if x else math.nan
+    #     std_y = Maths.std(y) if y else math.nan
+
+    #     if math.isnan(cov) or math.isnan(std_x) or math.isnan(std_y):
+    #         return math.nan
+
+    #     if std_x == 0.0 or std_y == 0.0:
+    #         return math.nan
+
+    #     return cov / (std_x * std_y)
+
+    # @staticmethod
+    # def absolute_correlation(x: list[float], y: list[float]) -> float:
+    #     """
+    #     Absolute value of Pearson correlation.
+    #     """
+    #     corr = Maths.correlation(x, y)
+
+    #     if math.isnan(corr):
+    #         return math.nan
+
+    #     return abs(corr)

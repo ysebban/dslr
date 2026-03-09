@@ -14,16 +14,14 @@ Usage:
   python pair_plot.py <csv_path>
 """
 
-# from __future__ import annotations
-
 import argparse
 import math
 
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from CsvManip import CsvManip
-from PlotNavigator import PlotNavigator
+from utils.CsvManip import CsvManip
+from utils.PlotNavigator import PlotNavigator
 
 
 HOUSES = ("Ravenclaw", "Slytherin", "Gryffindor", "Hufflepuff")
