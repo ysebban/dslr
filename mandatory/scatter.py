@@ -16,10 +16,11 @@ import argparse
 import math
 
 import matplotlib.pyplot as plt
-import pandas as pd
+
 
 from utils.CsvManip import CsvManip
 from utils.PlotNavigator import PlotNavigator
+from utils.maths import Maths
 
 
 HOUSES = ("Ravenclaw", "Slytherin", "Gryffindor", "Hufflepuff")
@@ -33,7 +34,7 @@ class ScatterGridPlot:
     Each subplot compares the base feature with one other feature.
     """
 
-    def __init__(self, dataframe: pd.DataFrame) -> None:
+    def __init__(self, dataframe) -> None:
         """
         Initialize a scatter plot helper.
 
@@ -226,7 +227,7 @@ class ScatterGridPlot:
         """
         Compute and format correlation text for one feature pair.
         """
-        correlation = pd.Series(base_values).corr(pd.Series(other_values))
+        correlation = Maths.correlation(base_values, other_values)
         return "nan" if correlation != correlation else f"{correlation:.3f}"
 
 

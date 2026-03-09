@@ -18,10 +18,11 @@ import argparse
 import math
 
 import matplotlib.pyplot as plt
-import pandas as pd
+
 
 from utils.CsvManip import CsvManip
 from utils.PlotNavigator import PlotNavigator
+from utils.maths import Maths
 
 
 HOUSES = ("Ravenclaw", "Slytherin", "Gryffindor", "Hufflepuff")
@@ -39,7 +40,7 @@ class PairPlotByFeature:
         - scatter(base vs other) for all other numeric features
     """
 
-    def __init__(self, dataframe: pd.DataFrame) -> None:
+    def __init__(self, dataframe) -> None:
         """
         Initialize a pair-plot helper.
 
@@ -48,7 +49,7 @@ class PairPlotByFeature:
         """
         self.dataframe = dataframe
 
-        features = CsvManip.loadFeatures(self.dataframe)
+        features, _ = CsvManip.loadFeatures(self.dataframe)
         self.feature_names = list(features.keys())
 
         self.columns_count = 4
@@ -261,7 +262,7 @@ class PairPlotByFeature:
         """
         Compute and format correlation text for one feature pair.
         """
-        correlation = pd.Series(x_values).corr(pd.Series(y_values))
+        correlation = Maths.correlation(x_values, y_values)
         return "nan" if correlation != correlation else f"{correlation:.3f}"
 
 

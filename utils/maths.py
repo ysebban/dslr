@@ -308,45 +308,45 @@ class Maths:
         return mean_spread / avg_std
 
     # UNUSED FOR NOW COULD BE USE FOR MutualInfo extra overkilled bonus
-    # @staticmethod
-    # def covariance(x: list[float], y: list[float]) -> float:
-    #     """
-    #     Sample covariance of two aligned vectors.
+    @staticmethod
+    def covariance(x: list[float], y: list[float]) -> float:
+        """
+        Sample covariance of two aligned vectors.
 
-    #     Returns math.nan if invalid.
-    #     """
-    #     n = len(x)
+        Returns math.nan if invalid.
+        """
+        n = len(x)
 
-    #     if n != len(y) or n < 2:
-    #         return math.nan
+        if n != len(y) or n < 2:
+            return math.nan
 
-    #     mean_x = Maths.mean(x)
-    #     mean_y = Maths.mean(y)
+        mean_x = Maths.mean(x)
+        mean_y = Maths.mean(y)
 
-    #     total = 0.0
+        total = 0.0
 
-    #     for xi, yi in zip(x, y):
-    #         total += (xi - mean_x) * (yi - mean_y)
+        for xi, yi in zip(x, y):
+            total += (xi - mean_x) * (yi - mean_y)
 
-    #     return total / (n - 1)
+        return total / (n - 1)
 
-    # @staticmethod
-    # def correlation(x: list[float], y: list[float]) -> float:
-    #     """
-    #     Pearson correlation coefficient in [-1, 1].
-    #     """
-    #     cov = Maths.covariance(x, y)
+    @staticmethod
+    def correlation(x: list[float], y: list[float]) -> float:
+        """
+        Pearson correlation coefficient in [-1, 1].
+        """
+        cov = Maths.covariance(x, y)
 
-    #     std_x = Maths.std(x) if x else math.nan
-    #     std_y = Maths.std(y) if y else math.nan
+        std_x = Maths.std(x) if x else math.nan
+        std_y = Maths.std(y) if y else math.nan
 
-    #     if math.isnan(cov) or math.isnan(std_x) or math.isnan(std_y):
-    #         return math.nan
+        if math.isnan(cov) or math.isnan(std_x) or math.isnan(std_y):
+            return math.nan
 
-    #     if std_x == 0.0 or std_y == 0.0:
-    #         return math.nan
+        if std_x == 0.0 or std_y == 0.0:
+            return math.nan
 
-    #     return cov / (std_x * std_y)
+        return cov / (std_x * std_y)
 
     # @staticmethod
     # def absolute_correlation(x: list[float], y: list[float]) -> float:
