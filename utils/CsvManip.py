@@ -176,7 +176,24 @@ class CsvManip:
         if houses is not None and house_col in filtered.columns:
             filtered = filtered[filtered[house_col].isin(houses)]
 
-        names = [name for name in feature_names if name in filtered.columns]
+        names: list[str] = []
+        # filter names to only keep numeric columns
+        for name in feature_names:
+            if name not in filtered.columns:
+                continue
+
+            column_ok = True
+            for raw_value in filtered[name].tolist():
+                if CsvManip.is_missing(raw_value):
+                    continue
+                try:
+                    float(raw_value)
+                except Exception:
+                    column_ok = False
+                    break
+
+            if column_ok:
+                names.append(name)
 
         matrix: list[list[float]] = []
         output_labels: list[str] | None = [] if labels else None

@@ -2,6 +2,9 @@ import math
 import pandas as pd
 import json
 
+from utils.CsvManip import CsvManip
+
+NAMES = ["Astronomy", "Charms", "Ancient Runes", "Divination", "Herbology", "Transfiguration", "Flying"]
 
 class DSLR:
     """
@@ -31,7 +34,7 @@ class DSLR:
     def fit(self):
         """Train the model on data."""
         # Get features and labels
-        X, y, feature_names = self._prepare_data()
+        X, y, feature_names = CsvManip.loadFeaturesMatrix(self.data, NAMES, labels=True)
 
         if X is None or len(X) == 0:
             print("Error: No valid data")
