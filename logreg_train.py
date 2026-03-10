@@ -1,25 +1,40 @@
+"""
+Logistic Regression Training Module
+
+Trains a logistic regression model on the given dataset.
+"""
+
 import argparse
-# from model.Training import Training
+from model.Training import DSLR
+from CsvManip import CsvManip
 
 
 def main():
-    """
-    Train A Logistic Regression model on the given dataset.
-    """
-    parser = argparse.ArgumentParser(description="Train a Logistic Regression model on the given dataset.")
+    """Train a logistic regression model."""
+    parser = argparse.ArgumentParser(description="Train logistic regression.")
     parser.add_argument(
         "dataset",
-        help="Path to the csv dataset"
+        help="Path to training CSV"
     )
+    parser.add_argument(
+        "--output",
+        default="model_weights.json",
+        help="Output file"
+    )
+
     args = parser.parse_args()
-    # Load dataset
-    # csv_loader = CsvManip(args.dataset)
-    # data = csv_loader.load()
-    print(args.dataset)
+
+    # Load data
+    data = CsvManip.loadCsv(args.dataset)
+
     # Train model
-    # training = Training(data)
-    # training.std_train()
+    model = DSLR(data)
+    model.train()
+
+    # Save model
+    model.save_model(args.output)
 
 
 if __name__ == "__main__":
     main()
+
