@@ -70,7 +70,11 @@ class DSLR:
             weights = [0.0] * (num_features + 1)
 
             # Train
-            weights = self._gradient_descent(features_with_bias, binary_labels, weights)
+            weights = self._gradient_descent(
+                features_with_bias,
+                binary_labels,
+                weights
+            )
 
             self.classifiers[house] = weights
 
@@ -149,7 +153,8 @@ class DSLR:
         std = []
         for i in range(num_features):
             vals = [X[s][i] for s in range(num_samples)]
-            variance = sum((x - mean[i]) ** 2 for x in vals) / (num_samples - 1)
+            variance = sum((x - mean[i]) ** 2 for x in vals) \
+                / (num_samples - 1)
             std.append(math.sqrt(variance) if variance > 0 else 1.0)
 
         # Normalize
@@ -195,7 +200,8 @@ class DSLR:
         cost = 0
         for i in range(num_samples):
             pred = max(epsilon, min(1 - epsilon, y_pred[i]))
-            cost += -y_true[i] * math.log(pred) - (1 - y_true[i]) * math.log(1 - pred)
+            cost += -y_true[i] * math.log(pred)\
+                - (1 - y_true[i]) * math.log(1 - pred)
 
         return cost / num_samples
 

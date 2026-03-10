@@ -7,7 +7,7 @@ Predicts Hogwarts houses using DSLR class static method.
 import argparse
 import json
 import pandas as pd
-from model.Training import DSLR
+from model.DLSR import DSLR
 
 
 def main():

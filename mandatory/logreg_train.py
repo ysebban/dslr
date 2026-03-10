@@ -5,8 +5,8 @@ Trains a logistic regression model on the given dataset.
 """
 
 import argparse
-from model.Training import DSLR
-from CsvManip import CsvManip
+from model.DLSR import DSLR
+from utils.CsvManip import CsvManip
 
 
 def main():
