@@ -14,16 +14,14 @@ Usage:
   python describe.py <csv_path>
 """
 
-from __future__ import annotations
-
 import argparse
 import math
 import shutil
 from dataclasses import dataclass
 from typing import Iterable
 
-from CsvManip import CsvManip
-from maths import Maths
+from utils.CsvManip import CsvManip
+from utils.maths import Maths
 
 
 LABELS: dict[str, str] = {
@@ -71,19 +69,23 @@ class FeatureMetrics:
     @classmethod
     def from_values(cls, values: list[float]) -> "FeatureMetrics":
         """
-        Compute metrics from a list of floats.
+        Compute summary statistics from numeric values.
 
         Args:
-            values: List of numeric values (already converted to float).
+            values:
+                List of numeric values already converted to float.
 
         Returns:
-            FeatureMetrics instance. If `values` is empty, all metrics are NaN.
+            FeatureMetrics instance containing computed statistics.
+            If the list is empty, all metrics are returned as NaN.
         """
+
         if not values:
             nan = math.nan
             return cls(nan, nan, nan, nan, nan, nan, nan, nan)
 
         minimum, maximum = Maths.min_max(values)
+
         return cls(
             count=float(len(values)),
             mean=Maths.mean(values),
@@ -96,48 +98,70 @@ class FeatureMetrics:
         )
 
 
-# ---------- Report rendering ----------
+# ---------- Rendering metadata ----------
 @dataclass(frozen=True, slots=True)
 class FeatureColumn:
-    """Rendering metadata for one feature column."""
+    """
+    Rendering metadata for a feature column.
+
+    Attributes:
+        feature_name:
+            Internal feature identifier.
+
+        header:
+            Display name used in the report header.
+
+        width:
+            Fixed column width used during formatting.
+    """
 
     feature_name: str
     header: str
     width: int
 
 
+# ---------- Report renderer ----------
 @dataclass(slots=True)
 class DescribeReport:
     """
-    Terminal-friendly table of FeatureMetrics for multiple features.
+    Terminal-friendly renderer for feature statistics.
 
-    This class only formats computed metrics. Feature extraction is performed
-    elsewhere and passed in as a mapping {feature_name -> list[float]}.
+    This class does NOT compute statistics itself. Instead it formats
+    already-computed metrics into a table that adapts to terminal width.
+
+    The renderer is designed to be reusable by other reports
+    (for example `describe_bonus.py`) by exposing the generic
+    `_render_metrics_table()` method.
     """
 
     by_feature: dict[str, FeatureMetrics]
 
     # ---------- Construction ----------
     @classmethod
-    def from_features(cls,
-                      features: dict[str, list[float]]
-                      ) -> "DescribeReport":
+    def from_features(
+        cls,
+        features: dict[str, list[float]]
+    ) -> "DescribeReport":
         """
         Build a report from pre-extracted numeric features.
 
         Args:
-            features: Mapping {feature_name -> list of float values}.
+            features:
+                Mapping {feature_name -> list of float values}.
 
         Returns:
-            DescribeReport containing metrics for every feature.
+            DescribeReport containing computed metrics for each feature.
         """
+
         metrics_by_feature: dict[str, FeatureMetrics] = {}
+
         for feature_name, values in features.items():
             metrics_by_feature[feature_name] = \
                 FeatureMetrics.from_values(values)
+
         return cls(metrics_by_feature)
 
-    # ---------- Layout / formatting helpers ----------
+    # ---------- Layout helpers ----------
     @staticmethod
     def _terminal_width(default: int = 120) -> int:
         """Return terminal width with a safe fallback."""
@@ -145,30 +169,46 @@ class DescribeReport:
 
     @staticmethod
     def _metric_label_width(metric_names: Iterable[str]) -> int:
-        """Width of the left label column."""
+        """
+        Compute the width required for the left metric label column.
+        """
+
         return max(
-            len(
-                LABELS.get(metric_name, metric_name)
-                ) for metric_name in metric_names
-            )
+            len(LABELS.get(metric_name, metric_name))
+            for metric_name in metric_names
+        )
 
     @staticmethod
     def _truncate_feature_name(feature_name: str) -> str:
-        """Truncate long feature names to keep headers readable."""
+        """
+        Truncate long feature names to keep headers readable.
+        """
+
         if len(feature_name) <= MAX_HEADER_W:
             return feature_name
+
         return feature_name[: MAX_HEADER_W - 3] + "..."
 
     def _build_feature_columns(self) -> list[FeatureColumn]:
-        """Build per-feature rendering metadata."""
+        """
+        Build rendering metadata for each feature column.
+        """
+
         columns: list[FeatureColumn] = []
+
         for feature_name in self.by_feature.keys():
+
             header = self._truncate_feature_name(feature_name)
             width = max(MIN_COLUMN_W, len(header))
-            columns.append(FeatureColumn(feature_name=feature_name,
-                                         header=header,
-                                         width=width
-                                         ))
+
+            columns.append(
+                FeatureColumn(
+                    feature_name=feature_name,
+                    header=header,
+                    width=width,
+                )
+            )
+
         return columns
 
     @staticmethod
@@ -178,14 +218,19 @@ class DescribeReport:
         terminal_width: int,
         metric_label_width: int,
     ) -> list[list[FeatureColumn]]:
-        """Group columns into blocks that fit within the terminal width."""
+        """
+        Split feature columns into blocks that fit the terminal width.
+        """
+
         blocks: list[list[FeatureColumn]] = []
 
         current_block: list[FeatureColumn] = []
         used_width = metric_label_width + 1
 
         for column in columns:
+
             needed = column.width + 1
+
             if current_block and (used_width + needed > terminal_width):
                 blocks.append(current_block)
                 current_block = []
@@ -201,115 +246,132 @@ class DescribeReport:
 
     @staticmethod
     def _format_number(value: float, width: int) -> str:
-        """Format a float into a fixed-width cell."""
+        """
+        Format numeric value into a fixed-width table cell.
+        """
+
         if isinstance(value, float) and math.isnan(value):
             return f"{'nan':>{width}}"
+
         return f"{value:>{width}.{PRECISION}f}"
 
-    @staticmethod
-    def _render_header_row(
-        block: list[FeatureColumn],
-        metric_label_width: int
-         ) -> str:
-        """Render the header row for a column block."""
-        left_padding = " " * (metric_label_width + 1)
-        headers = " ".join(
-            f"{column.header:>{column.width}}" for column in block
-            )
-        return left_padding + headers
-
-    def _render_metric_row(
+    # ---------- Generic renderer ----------
+    def _render_metrics_table(
         self,
-        metric_name: str,
-        *,
-        block: list[FeatureColumn],
-        metric_label_width: int,
+        metrics_by_feature: dict[str, object],
+        labels: dict[str, str]
     ) -> str:
-        """Render one metric row for a column block."""
-        label = LABELS.get(metric_name, metric_name)
-        parts = [f"{label:<{metric_label_width}}"]
-
-        for column in block:
-            metrics = self.by_feature[column.feature_name]
-            value = getattr(metrics, metric_name)
-            parts.append(self._format_number(value, column.width))
-
-        return " ".join(parts)
-
-    def _render_blocks(
-        self,
-        blocks: list[list[FeatureColumn]],
-        *,
-        metric_names: list[str],
-        metric_label_width: int,
-    ) -> str:
-        """Render all blocks into the final report string."""
-        lines: list[str] = []
-
-        for block_index, block in enumerate(blocks):
-            if block_index > 0:
-                lines.append("")
-
-            lines.append(self._render_header_row(block, metric_label_width))
-            for metric_name in metric_names:
-                lines.append(
-                    self._render_metric_row(
-                        metric_name,
-                        block=block,
-                        metric_label_width=metric_label_width,
-                    )
-                )
-
-        return "\n".join(lines)
-
-    # ---------- Public rendering ----------
-    def __str__(self) -> str:
         """
-        Do
+        Generic metrics table renderer.
+
+        This method allows different reports (base or bonus)
+        to reuse the same rendering logic.
 
         Args:
-            
-        Returns:
-        
-        """
-        if not self.by_feature:
-            return "No numeric features found."
+            metrics_by_feature:
+                Mapping {feature -> metrics object}
 
-        metric_names = LABELS.keys()
-        metric_label_width = self._metric_label_width(metric_names)
+            labels:
+                Mapping {metric attribute -> display label}
+
+        Returns:
+            Formatted multi-line string representing the table.
+        """
+
+        if not metrics_by_feature:
+            return "No metrics available."
+
+        metric_names = list(labels.keys())
+        metric_label_width = max(len(labels[m]) for m in metric_names)
 
         terminal_width = self._terminal_width()
+
+        # temporarily reuse column builder
+        old = self.by_feature
+        self.by_feature = metrics_by_feature
+
         columns = self._build_feature_columns()
+
+        self.by_feature = old
+
         blocks = self._split_columns_to_fit_terminal(
             columns,
             terminal_width=terminal_width,
             metric_label_width=metric_label_width,
         )
 
-        return self._render_blocks(
-            blocks,
-            metric_names=metric_names,
-            metric_label_width=metric_label_width,
-        )
+        lines: list[str] = []
+
+        for block_index, block in enumerate(blocks):
+
+            if block_index > 0:
+                lines.append("")
+
+            left_padding = " " * (metric_label_width + 1)
+
+            headers = " ".join(
+                f"{column.header:>{column.width}}"
+                for column in block
+            )
+
+            lines.append(left_padding + headers)
+
+            for metric_name in metric_names:
+
+                label = labels[metric_name]
+                parts = [f"{label:<{metric_label_width}}"]
+
+                for column in block:
+
+                    metrics = metrics_by_feature[column.feature_name]
+                    value = getattr(metrics, metric_name)
+
+                    parts.append(self._format_number(value, column.width))
+
+                lines.append(" ".join(parts))
+
+        return "\n".join(lines)
+
+    # ---------- Public rendering ----------
+    def __str__(self) -> str:
+        """
+        Render the base describe report.
+        """
+
+        return self._render_metrics_table(self.by_feature, LABELS)
 
 
+# ---------- CLI ----------
 def main(argv: list[str] | None = None) -> int:
+    """
+    Entry point for the describe CLI.
+
+    Loads the dataset, extracts numeric features,
+    computes statistics, and prints the report.
+    """
+
     parser = argparse.ArgumentParser(
         prog="describe.py",
         description="Summary statistics for numeric features in a CSV.",
     )
+
     parser.add_argument("csv_path", help="Path to the CSV dataset.")
+
     args = parser.parse_args(argv)
 
     try:
         dataframe = CsvManip.loadCsv(args.csv_path)
+
     except Exception as exc:
         parser.error(f"Cannot load CSV: {exc!s}")
         return 1
 
-    features = CsvManip.loadFeatures(dataframe)
+    features, _ = CsvManip.loadFeatures(dataframe)
+
     report = DescribeReport.from_features(features)
+
     print(report)
+
     return 0
 
 
