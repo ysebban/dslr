@@ -1,10 +1,8 @@
 import math
 import pandas as pd
 import json
-
 from utils.CsvManip import CsvManip
 
-NAMES = ["Astronomy", "Charms", "Ancient Runes", "Divination", "Herbology", "Transfiguration", "Flying"]
 
 class DSLR:
     """
@@ -33,9 +31,20 @@ class DSLR:
 
     def fit(self):
         """Train the model on data."""
+        NAMES = [
+            "Astronomy",
+            "Charms",
+            "Ancient Runes",
+            "Divination",
+            "Herbology",
+            "Transfiguration",
+            "Flying"]
         # Get features and labels
-        X, y, feature_names = CsvManip.loadFeaturesMatrix(self.data, NAMES, labels=True)
-
+        feature_names, X, y = CsvManip.loadFeaturesMatrix(
+            self.data,
+            NAMES,
+            labels=True
+        )
         if X is None or len(X) == 0:
             print("Error: No valid data")
             return self
@@ -304,32 +313,3 @@ class DSLR:
 
         msg = "Model saved to {}".format(filepath)
         print(msg)
-
-
-if __name__ == "__main__":
-    """Main entry point for training."""
-    import argparse
-    from CsvManip import CsvManip
-
-    parser = argparse.ArgumentParser(description="Train logistic regression.")
-    parser.add_argument("dataset", help="Path to CSV")
-    parser.add_argument(
-        "--output",
-        default="model_weights.json",
-        help="Output file"
-    )
-
-    args = parser.parse_args()
-
-    msg = "Loading: {}".format(args.dataset)
-    print(msg)
-    data = CsvManip.loadCsv(args.dataset)
-
-    print("Training...")
-    model = DSLR(data)
-    model.train()
-
-    model.save_model(args.output)
-
-    print("Done!")
-
