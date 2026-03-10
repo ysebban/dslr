@@ -179,7 +179,7 @@ class CsvManip:
         names: list[str] = []
         # filter names to only keep numeric columns
         for name in feature_names:
-            if name not in filtered.columns:
+            if name not in filtered.columns or name == "Index":
                 continue
 
             column_ok = True
