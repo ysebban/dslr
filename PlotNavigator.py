@@ -29,6 +29,14 @@ class PlotNavigator:
         self.axes = None
 
     def show(self, start_index=0):
+        """
+        Do
+
+        Args:
+            
+        Returns:
+        
+        """
         self.index = max(0, min(start_index, len(self.items) - 1))
 
         self.figure, self.axes = self.make_figure()

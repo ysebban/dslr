@@ -264,7 +264,14 @@ class DescribeReport:
 
     # ---------- Public rendering ----------
     def __str__(self) -> str:
-        """Return the report as a formatted string."""
+        """
+        Do
+
+        Args:
+            
+        Returns:
+        
+        """
         if not self.by_feature:
             return "No numeric features found."
 
