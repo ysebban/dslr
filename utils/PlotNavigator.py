@@ -53,17 +53,14 @@ class PlotNavigator:
     def __init__(self, items, *, render, make_figure, make_axes, title="Plot"):
         """
         Initialize a plot navigator.
-
         Args:
             items: Sequence of items that can be plotted.
             render: Function responsible for drawing one item.
             make_figure: Function creating the matplotlib figure.
             make_axes: Function creating the axes inside that figure.
             title: Base title displayed at the top of the figure.
-
         Returns:
             A PlotNavigator instance.
-
         Raises:
             ValueError: If `items` is empty.
         """
@@ -78,18 +75,14 @@ class PlotNavigator:
 
         # Current displayed item.
         self.index = 0
-
         # Latest requested item.
         self.pending_index = 0
-
         # Matplotlib objects kept alive during the whole session.
         self.figure = None
         self.axes = None
-
         # Drawing / scheduling state.
         self.is_drawing = False
         self._after_id = None
-
         # Key state.
         self.key_held = False
         self.held_key = None
@@ -97,14 +90,8 @@ class PlotNavigator:
     def show(self, start_index=0):
         """
         Start the interactive plot navigator.
-
         Args:
             start_index: Index of the first item to display.
-
-        Notes:
-            The starting index is clamped within valid bounds.
-            This method opens a matplotlib window and waits for keyboard input.
-            The figure and axes are created only once.
         """
         start = max(0, min(start_index, len(self.items) - 1))
         self.index = start
@@ -163,16 +150,11 @@ class PlotNavigator:
         self.pending_index = new_index
         return True
 
-    def _schedule_draw(self, delay_ms=10):
+    def _schedule_draw(self, delay_ms=1000):
         """
         Schedule a coalesced redraw with Tk `after()`.
-
         Args:
             delay_ms: Delay in milliseconds before running the draw callback.
-
-        Notes:
-            Only one scheduled redraw may exist at a time.
-            This prevents flooding the GUI loop when keys are pressed quickly.
         """
         if self.figure is None:
             return
@@ -200,7 +182,6 @@ class PlotNavigator:
     def _run_scheduled_draw(self):
         """
         Execute a scheduled redraw.
-
         Behavior:
             - Clear the current scheduled callback id
             - If a draw is already running, reschedule once later
@@ -223,15 +204,6 @@ class PlotNavigator:
     def _clear_axes(self):
         """
         Clear the current axes content without rebuilding the whole figure.
-
-        Notes:
-            `self.axes` may be:
-            - a single Axes object
-            - a list / tuple of Axes
-            - a NumPy array of Axes
-
-            We try to iterate when possible; otherwise we assume a single axes
-            object exposing `.clear()`.
         """
         if self.axes is None:
             return
@@ -244,33 +216,20 @@ class PlotNavigator:
                 else:
                     ax.clear()
             return
-
         # Single axes object.
         self.axes.clear()
 
     def _draw(self):
         """
         Render the current plot item.
-
-        Behavior:
-            - Reuses the existing figure
-            - Reuses the existing axes
-            - Clears only the axes content
-            - Calls the render function
-            - Updates the figure title
-            - Requests a deferred canvas redraw with `draw_idle()`
-
-        Notes:
-            This method never calls `plt.show()`.
-            The GUI window is opened once in `show()`.
         """
         if self.figure is None or self.axes is None:
             return
         if self.is_drawing:
             return
 
-        self.is_drawing = True
         try:
+            self.is_drawing = True
             item = self.items[self.index]
             items_len = len(self.items)
 
@@ -288,7 +247,6 @@ class PlotNavigator:
                     f"{self.title} — {self.index + 1}/{items_len}"
                 )
 
-            # Let Matplotlib/Tk repaint when the GUI loop is ready.
             self.figure.canvas.draw()
 
         finally:
@@ -297,19 +255,14 @@ class PlotNavigator:
     def _on_key_press(self, event):
         """
         Handle key press events.
-
         Supported keys:
             - right: move to next plot
             - left: move to previous plot
             - r: redraw current plot
             - q or escape: quit
-
-        Notes:
-            The key callback only updates navigation state.
-            It never redraws immediately inside the raw event callback.
         """
         key = event.key
-        if key is None:
+        if key is None or self.key_held is True:
             return
 
         if key in ("q", "escape"):

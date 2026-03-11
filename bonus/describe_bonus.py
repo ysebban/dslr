@@ -43,29 +43,21 @@ BONUS_LABELS: dict[str, str] = {
 class BonusFeatureMetrics(FeatureMetrics):
     """
     Extended metrics for a single feature.
-
     Inherits base descriptive statistics from `FeatureMetrics`
     and adds additional metrics useful for classification analysis.
-
     Attributes:
         mean_spread:
             Difference between the highest and lowest class mean.
-
         norm_spread:
             Normalized spread relative to average class standard deviation.
-
         missing_count:
             Number of missing values for this feature.
-
         missing_ratio:
             Percentage of missing values in the dataset.
-
         group_stds:
             Per-house standard deviations.
-
         group_means:
             Per-house means.
-
         separation_score:
             Measure of how well the feature separates houses.
     """
@@ -87,17 +79,13 @@ class BonusFeatureMetrics(FeatureMetrics):
     ) -> "BonusFeatureMetrics":
         """
         Build extended metrics for a feature.
-
         Args:
             feature_values:
                 Clean numeric values for the feature.
-
             missing_values:
                 Tuple (missing_count, total_count).
-
             groups:
                 Mapping {house -> list of numeric values}.
-
         Returns:
             BonusFeatureMetrics instance containing base statistics
             and additional class-aware metrics.
@@ -142,10 +130,6 @@ class BonusFeatureMetrics(FeatureMetrics):
 class BonusReport(DescribeReport):
     """
     Extended report built on top of `DescribeReport`.
-
-    This report contains:
-    - Base statistics inherited from `DescribeReport`
-    - Bonus classification-oriented metrics
     """
 
     by_bonus: dict[str, BonusFeatureMetrics]
@@ -159,17 +143,13 @@ class BonusReport(DescribeReport):
     ) -> "BonusReport":
         """
         Build the bonus report from extracted features.
-
         Args:
             features:
                 Mapping {feature -> numeric values}
-
             missing:
                 Mapping {feature -> (missing_count, total_count)}
-
             groups:
                 Mapping {feature -> {house -> values}}
-
         Returns:
             Fully constructed BonusReport.
         """
@@ -214,9 +194,10 @@ class BonusReport(DescribeReport):
                 )
             )
 
+        # get higher sep score on Top
         rows.sort(key=lambda r: r[1], reverse=True)
 
-        header = f"{'Feature':<26} {'SepScore':>8} {'Missing%':>9}  Quality"
+        header = f"{'Feature':<30} {'SepScore':>8} {'Missing%':>9}  Quality"
         print(header)
         print("-" * len(header))
 
@@ -237,7 +218,7 @@ class BonusReport(DescribeReport):
                 label = "POOR"
 
             print(
-                f"{feature:<26} "
+                f"{feature:<30} "
                 f"{sep:8.2f} "
                 f"{miss:9.2f}  "
                 f"{bar:<10} {label}"

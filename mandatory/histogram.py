@@ -45,32 +45,25 @@ class HistogramPlot:
             make_figure=histogram.make_figure,
             title="Histogram",
         )
-
         navigator.show()
     """
 
     def __init__(self, dataframe) -> None:
         """
         Initialize a histogram plot helper.
-
         Args:
             dataframe: Source pandas DataFrame.
-
         Returns:
             A HistogramPlot instance.
-
-        Notes:
-            Numeric features are extracted once for the full dataset.
-            Per-house features are also precomputed to make rendering simpler.
         """
         self.dataframe = dataframe
 
-        all_features = CsvManip.loadFeatures(self.dataframe)
+        all_features, _ = CsvManip.loadFeatures(self.dataframe)
         self.feature_names = list(all_features.keys())
 
         self.by_house = {}
         for house_name in HOUSES:
-            house_features = CsvManip.loadFeatures(
+            house_features, _ = CsvManip.loadFeatures(
                 self.dataframe,
                 houses=[house_name]
             )
@@ -79,22 +72,16 @@ class HistogramPlot:
     def make_figure(self):
         """
         Create the matplotlib figure used for the histogram view.
-
         Returns:
             A matplotlib figure.
-
-        Notes:
-            Axes are created separately by make_axes().
         """
         return plt.figure(figsize=(12, 5))
 
     def make_axes(self, figure):
         """
         Create the axes used for the histogram view.
-
         Args:
             figure: Matplotlib figure where axes must be created.
-
         Returns:
             A tuple of axes:
                 - mean_axis
@@ -106,16 +93,13 @@ class HistogramPlot:
     def render(self, feature_name: str, axes, index: int, total: int) -> str:
         """
         Render one feature for all houses.
-
         Args:
             feature_name: Name of the feature to display.
             axes: Tuple containing the matplotlib axes.
             index: Current feature index.
             total: Total number of features.
-
         Returns:
             The feature name, used by PlotNavigator in the figure title.
-
         Behavior:
             - Computes mean by house
             - Computes std by house
@@ -157,10 +141,8 @@ class HistogramPlot:
 def main(argv: list[str] | None = None) -> int:
     """
     Run the histogram viewer from command line arguments.
-
     Args:
         argv: Optional argument list. If None, uses command line arguments.
-
     Returns:
         Exit status code.
 

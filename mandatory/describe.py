@@ -128,10 +128,6 @@ class DescribeReport:
 
     This class does NOT compute statistics itself. Instead it formats
     already-computed metrics into a table that adapts to terminal width.
-
-    The renderer is designed to be reusable by other reports
-    (for example `describe_bonus.py`) by exposing the generic
-    `_render_metrics_table()` method.
     """
 
     by_feature: dict[str, FeatureMetrics]
@@ -144,11 +140,9 @@ class DescribeReport:
     ) -> "DescribeReport":
         """
         Build a report from pre-extracted numeric features.
-
         Args:
             features:
                 Mapping {feature_name -> list of float values}.
-
         Returns:
             DescribeReport containing computed metrics for each feature.
         """
@@ -263,17 +257,11 @@ class DescribeReport:
     ) -> str:
         """
         Generic metrics table renderer.
-
-        This method allows different reports (base or bonus)
-        to reuse the same rendering logic.
-
         Args:
             metrics_by_feature:
                 Mapping {feature -> metrics object}
-
             labels:
                 Mapping {metric attribute -> display label}
-
         Returns:
             Formatted multi-line string representing the table.
         """
@@ -367,9 +355,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     features, _ = CsvManip.loadFeatures(dataframe)
-
     report = DescribeReport.from_features(features)
-
     print(report)
 
     return 0

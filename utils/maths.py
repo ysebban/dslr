@@ -29,10 +29,8 @@ class Maths:
     def mean(values: Sequence[float]) -> float:
         """
         Compute the arithmetic mean.
-
         Args:
             values: Sequence of floats.
-
         Returns:
             Mean of `values`, or math.nan if there are fewer than 2 values.
         """
@@ -42,42 +40,49 @@ class Maths:
         return sum(values) / total_entries
 
     @staticmethod
+    def variance(values: Sequence[float]) -> float:
+        """
+        Return sample variance of values.
+        Returns:
+            math.nan if values empty
+            0.0 if length == 1
+        """
+        n = len(values)
+        if n == 0:
+            return math.nan
+        if n == 1:
+            return 0.0
+
+        mean_value = Maths.mean(values)
+
+        total = 0.0
+        for v in values:
+            diff = v - mean_value
+            total += diff * diff
+
+        return total / (n - 1)
+
+    @staticmethod
     def std(values: Sequence[float]) -> float:
         """
         Compute the sample standard deviation (denominator n-1).
-
         Args:
             values: Sequence of floats.
-
         Returns:
             Sample standard deviation, or math.nan if fewer than 2 values.
         """
-        mean_value = Maths.mean(values)
-        if math.isnan(mean_value):
-            return math.nan
-
-        total_delta_square = 0.0
-        for value in values:
-            delta = value - mean_value
-            total_delta_square += delta * delta
-
-        variance = total_delta_square / (len(values) - 1)
+        variance = Maths.variance(values)
         return math.sqrt(variance)
 
     @staticmethod
     def quartile(values: Sequence[float], quartile: float) -> float:
         """
         Compute a quartile using linear interpolation.
-
         Args:
             values: Sequence of floats.
             quartile: Quantile in [0.0, 1.0] (e.g. 0.25, 0.50, 0.75).
-
         Returns:
             The requested quartile, or math.nan if fewer than 2 values.
-
-        Notes:
-            Uses the common "position = (n - 1) * q" interpolation approach.
         """
         total_entries = len(values)
         if total_entries < 2:
@@ -101,10 +106,8 @@ class Maths:
     def min_max(values: Sequence[float]) -> tuple[float, float]:
         """
         Compute minimum and maximum values.
-
         Args:
             values: Sequence of floats.
-
         Returns:
             (min, max) as floats, or math.nan if fewer than 2 values.
         """
@@ -123,38 +126,11 @@ class Maths:
         return (minimum, maximum)
 
     @staticmethod
-    def variance(values: Sequence[float]) -> float:
-        """
-        Return sample variance of values.
-
-        Uses denominator (n - 1), consistent with sample std.
-
-        Returns:
-            math.nan if values empty
-            0.0 if length == 1
-        """
-        n = len(values)
-        if n == 0:
-            return math.nan
-        if n == 1:
-            return 0.0
-
-        mean_value = Maths.mean(values)
-
-        total = 0.0
-        for v in values:
-            diff = v - mean_value
-            total += diff * diff
-
-        return total / (n - 1)
-
-    @staticmethod
     def group_means(grouped_values: dict[str,
                                          list[float]
                                          ]) -> dict[str, float]:
         """
-        Compute mean for each group.
-
+        Compute mean for each group(Houses).
         Empty groups return math.nan.
         """
         out: dict[str, float] = {}
@@ -171,7 +147,6 @@ class Maths:
     def group_stds(grouped_values: dict[str, list[float]]) -> dict[str, float]:
         """
         Compute sample standard deviation per group.
-
         Empty groups return math.nan.
         """
         out: dict[str, float] = {}
@@ -190,9 +165,9 @@ class Maths:
                                                     ]) -> float:
         """
         Weighted variance of class means around the global mean.
-
         Returns:
             math.nan if no data.
+        Note : Tells how "far" a class mean is compare to global mean
         """
         all_values: list[float] = []
         for vals in grouped_values.values():
@@ -226,6 +201,10 @@ class Maths:
     def within_class_variance(grouped_values: dict[str, list[float]]) -> float:
         """
         Weighted average of variances inside each group.
+        Returns :
+            math.nan is no data
+        Note : 
+            Tells how "spread" values are inside each class
         """
         total = 0.0
         total_weight = 0
@@ -307,7 +286,6 @@ class Maths:
             return 0.0
         return mean_spread / avg_std
 
-    # UNUSED FOR NOW COULD BE USE FOR MutualInfo extra overkilled bonus
     @staticmethod
     def covariance(x: list[float], y: list[float]) -> float:
         """
@@ -347,15 +325,3 @@ class Maths:
             return math.nan
 
         return cov / (std_x * std_y)
-
-    # @staticmethod
-    # def absolute_correlation(x: list[float], y: list[float]) -> float:
-    #     """
-    #     Absolute value of Pearson correlation.
-    #     """
-    #     corr = Maths.correlation(x, y)
-
-    #     if math.isnan(corr):
-    #         return math.nan
-
-    #     return abs(corr)

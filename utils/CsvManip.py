@@ -28,15 +28,11 @@ class CsvManip:
     def loadCsv(path: str) -> pandas.DataFrame:
         """
         Load a CSV file into a pandas DataFrame.
-
         Args:
             path: Path to a CSV file.
-
         Returns:
             pandas.DataFrame with the CSV contents.
 
-        Notes:
-            Returns None if `path` is not a string.
         """
         if not isinstance(path, str):
             return None
@@ -46,7 +42,6 @@ class CsvManip:
     def is_missing(value) -> bool:
         """
         Return True if `value` should be treated as missing.
-
         Missing values:
         - None
         - NaN
@@ -68,21 +63,14 @@ class CsvManip:
     ) -> tuple[dict[str, list[float]], dict[str, tuple[int, int]]]:
         """
         Extract numeric features from a DataFrame.
-
         Args:
             dataframe: Source pandas DataFrame.
             houses:Keeps only rows where column "Hogwarts House" equals houses.
             ignore_cols: Column names to ignore , default to {"index"}.
-
         Returns:
             Tuple : dict[str, list[float]] , dict[str, tuple[int, int]]
             Dict mapping feature name -> list of float values.
             Dict mapping feature name -> count missing , count all
-
-
-        Rules:
-            - Missing values are ignored.
-            - Included only if all non-missing values are float-convertible.
         """
         filtered = dataframe
 
@@ -131,19 +119,15 @@ class CsvManip:
     ) -> tuple[list[str], list[list[float]], list[str] | None]:
         """
         Extract a numeric feature matrix from a DataFrame.
-
         Args:
             dataframe:
                 Source pandas DataFrame.
-
             feature_names:
                 Ordered list of candidate feature columns to include.
-
             houses:
                 Optional set of house names used to filter rows before
                 matrix extraction. Only rows whose "Hogwarts House"
                 belongs to this set are kept.
-
             labels:
                 If True, also return the house label for each valid row.
 
@@ -158,17 +142,6 @@ class CsvManip:
             - output_labels:
                 List of house labels aligned with `matrix` if `labels=True`,
                 otherwise None.
-
-        Rules:
-            - Rows containing at least one missing or invalid value in the
-            selected features are dropped entirely.
-            - Feature order in the output matrix matches `names`.
-            - If `labels=True` but the house column does not exist,
-            empty strings are returned as labels for valid rows.
-
-        Notes:
-            This helper is intended for model training and prediction,
-            where complete numeric rows are required.
         """
         filtered = dataframe
 
@@ -241,19 +214,15 @@ class CsvManip:
                 ) -> dict[str, dict[str, list[float]]]:
         """
     Group numeric feature values by house.
-
     Args:
         dataframe:
             Source pandas DataFrame.
-
         houses:
             Optional set of houses to include in the grouped output.
             If None, all houses present in the DataFrame are used.
-
         features_names:
             Optional set of feature names to group.
             If None, all DataFrame columns are considered.
-
     Returns:
         Nested mapping of the form:
             {
@@ -266,18 +235,6 @@ class CsvManip:
 
         For each feature, values are grouped by house and converted
         to float when possible.
-
-    Rules:
-        - Missing values are ignored.
-        - Non-numeric values are ignored for that feature.
-        - The "Index" column is skipped.
-        - Every selected house appears in each feature group,
-          even if its value list is empty.
-
-    Notes:
-        This helper is mainly used by bonus analysis code to compute
-        per-house means, per-house standard deviations, separation
-        scores, and other class-aware feature metrics.
     """
 
         house_col = "Hogwarts House"

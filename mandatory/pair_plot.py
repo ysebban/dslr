@@ -31,10 +31,8 @@ HOUSES = ("Ravenclaw", "Slytherin", "Gryffindor", "Hufflepuff")
 class PairPlotByFeature:
     """
     One-page-per-feature pair plot.
-
     Items navigated by PlotNavigator:
         feature_names (list[str])
-
     For each base feature page:
         - histogram(base)
         - scatter(base vs other) for all other numeric features
@@ -43,7 +41,6 @@ class PairPlotByFeature:
     def __init__(self, dataframe) -> None:
         """
         Initialize a pair-plot helper.
-
         Args:
             dataframe: Source pandas DataFrame.
         """
@@ -61,7 +58,6 @@ class PairPlotByFeature:
     def make_figure(self):
         """
         Create the matplotlib figure used for one pair-plot page.
-
         Returns:
             A matplotlib figure.
         """
@@ -72,10 +68,8 @@ class PairPlotByFeature:
     def make_axes(self, figure):
         """
         Create the subplot axes for one page.
-
         Args:
             figure: Matplotlib figure where axes must be created.
-
         Returns:
             A flat tuple of axes.
         """
@@ -87,13 +81,11 @@ class PairPlotByFeature:
     def render(self, base_feature: str, axes, index: int, total: int) -> str:
         """
         Render one page of the pair plot for a base feature.
-
         Args:
             base_feature: Current base feature.
             axes: Flat tuple of matplotlib axes.
             index: Current page index.
             total: Total number of pages.
-
         Returns:
             The base feature name, used by PlotNavigator in the title.
         """
@@ -269,10 +261,8 @@ class PairPlotByFeature:
 def main(argv: list[str] | None = None) -> int:
     """
     Run the pair-plot viewer from command line arguments.
-
     Args:
         argv: Optional argument list. If None, uses command line arguments.
-
     Returns:
         Exit status code.
     """
