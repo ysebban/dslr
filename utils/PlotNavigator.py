@@ -150,7 +150,7 @@ class PlotNavigator:
         self.pending_index = new_index
         return True
 
-    def _schedule_draw(self, delay_ms=1000):
+    def _schedule_draw(self, delay_ms=10):
         """
         Schedule a coalesced redraw with Tk `after()`.
         Args:
@@ -297,7 +297,7 @@ class PlotNavigator:
             item is rendered if it differs from the currently displayed one.
         """
         key = event.key
-        if key is None:
+        if key is None or self.key_held is False:
             return
 
         if key in ("left", "right"):
