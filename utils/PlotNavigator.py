@@ -150,7 +150,7 @@ class PlotNavigator:
         self.pending_index = new_index
         return True
 
-    def _schedule_draw(self, delay_ms=1000):
+    def _schedule_draw(self, delay_ms=10):
         """
         Schedule a coalesced redraw with Tk `after()`.
         Args:
