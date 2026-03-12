@@ -203,7 +203,7 @@ class Maths:
         Weighted average of variances inside each group.
         Returns :
             math.nan is no data
-        Note :
+        Note : 
             Tells how "spread" values are inside each class
         """
         total = 0.0
